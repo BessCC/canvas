@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width,
+    height=device-height, user-scalable=no,initial-scale=1, 
+    minimum-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="./dec.css">
+    <title>画布</title>
+    <script src="//at.alicdn.com/t/font_648722_63zlq68r04g6i529.js"></script>
+</head>
+
+<body>
+    <canvas id="page"></canvas>
+    <div class='allSvg'>
+        <svg id="pencil" class='active'>
+            <use xlink:href="#icon-pencil"></use>
+        </svg>
+        <svg id="eraser">
+            <use xlink:href="#icon-eraser"></use>
+        </svg>
+        <svg id="clear">
+            <use xlink:href="#icon-custom-clear"></use>
+        </svg>
+        <svg id="download">
+            <use xlink:href="#icon-download"></use>
+        </svg>
+    </div>
+    <ul class='palette'>
+        <li id='red' class="red"></li>
+        <li id='yellow' class="yellow"></li>
+        <li id='blue' class="blue"></li>
+    </ul>
+    <ul class='weight-control'>
+        <li class="weight-n" id="weightN"></li>
+        <li class="weight-m" id="weightM"></li>
+        <li class="weight-x" id="weightX"></li>
+    </ul>
+    <script> 
+        //全局变量
+        var yyy = document.getElementById("page");
+        var ctx = yyy.getContext("2d");
+        var eraserCondition = false;
+        var using = false;
+        //变换画笔颜色
+        red.onclick = function () {
+            ctx.strokeStyle = 'red';
+            yellow.classList.remove('change');
+            blue.classList.remove('change');
+            red.classList.add('change');
+        }
+        yellow.onclick = function () {
+            ctx.strokeStyle = 'yellow';
+            yellow.classList.add('change');
+            blue.classList.remove('change');
+            red.classList.remove('change');
+        }
+        blue.onclick = function () {
+            ctx.strokeStyle = 'blue';
+            yellow.classList.remove('change');
+            blue.classList.add('change');
+            red.classList.remove('change');
+        }
+        //变换画笔宽度
+        weightN.onclick = function () {
+            ctx.lineWidth = 5;
+        }
+        weightM.onclick = function () {
+            ctx.lineWidth = 10;
+        }
+        weightX.onclick = function () {
+            ctx.lineWidth = 15;
+        }
+
+        //设置视口宽高 
+        autoSetViewPoint(yyy);
+        //清屏
+        clear.onclick = function () {
+            ctx.clearRect(0, 0, yyy.width, yyy.height);
+        }
+        //保存图片
+        download.onclick = function () {
+        var data = yyy.toDataURL("image/png");
+        var  aa = document.createElement('a');
+        document.body.appendChild(aa);
+        aa.href = data;//使得href等于data的数据
+        aa.download = '保存的图片';//表示的是保存的文件名称
+        aa.click();
+
+        console.log(data);
+        }
+        //画笔和橡皮的变革
+        var btn1 = document.getElementById('eraser');
+        var btn2 = document.getElementById('pencil');
+        btn1.onclick = function () {
+            eraserCondition = true;
+            btn1.classList.add('active');
+            btn2.classList.remove('active');
+        }
+        btn2.onclick = function () {
+            eraserCondition = false;
+            btn2.classList.add('active');
+            btn1.classList.remove('active');
+
+        }
+        var lastPoint = { "x": undefined, "y": undefined };
+        //鼠标事件
+        mouseEvent(yyy);
+        //特性检查 
+        function mouseEvent(canvas) {
+            if ('ontouchstart' in document.body) {
+                canvas.ontouchstart = function (abc) {
+                    var x = abc.touches[0].clientX;//xy大写
+                    var y = abc.touches[0].clientY;
+                    using = true;
+                    if (eraserCondition) {
+                        ctx.clearRect(x, y, 10, 10)
+                    } else {
+                        lastPoint = { "x": x, "y": y };
+                    }
+                }
+                canvas.ontouchmove = function (abc) {
+                    var x = abc.touches[0].clientX;
+                    var y = abc.touches[0].clientY;
+
+                    var nextPoint = { "x": x, "y": y }
+                    if (using) {
+                        if (eraserCondition) {
+                            ctx.clearRect(x, y, 10, 10)
+                        } else {
+                            drawLine(lastPoint.x, lastPoint.y, nextPoint.x, nextPoint.y);
+                            lastPoint = nextPoint;
+                        }
+                    }
+                }
+                canvas.ontouchend = function (abc) {
+                    using = false;
+                }
+            } else {
+                canvas.onmousedown = function (abc) {
+                    var x = abc.clientX;
+                    var y = abc.clientY;
+                    using = true;
+                    if (eraserCondition) {
+                        ctx.clearRect(x, y, 10, 10)
+                    } else {
+                        lastPoint = { "x": x, "y": y };
+                    }
+                }
+                canvas.onmousemove = function (abc) {
+                    var x = abc.clientX;
+                    var y = abc.clientY;
+                    var nextPoint = { "x": x, "y": y }
+                    if (using) {
+                        if (eraserCondition) {
+                            ctx.clearRect(x, y, 10, 10)
+                        } else {
+                            drawLine(lastPoint.x, lastPoint.y, nextPoint.x, nextPoint.y);
+                            lastPoint = nextPoint;
+                        }
+                    }
+                }
+                canvas.onmouseup = function () {
+                    using = false;
+                }
+            }
+        }
+        //工具函数
+        function autoSetViewPoint(canvas) {
+            function setViewPort() {
+                var pageWidth = document.documentElement.clientWidth
+                var pageHeight = document.documentElement.clientHeight
+                canvas.width = pageWidth;
+                canvas.height = pageHeight;
+            }
+            setViewPort();
+            window.onresize = function () {
+                setViewPort();
+            }
+        }
+        function drawLine(x1, y1, x2, y2) {
+            ctx.beginPath();
+            ctx.moveTo(lastPoint.x, lastPoint.y);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.closePath();
+
+        }
+
+
+    /*var canvas = document.getElementById('page');
+    var ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = 'green';
+    ctx.fillRect(10, 10, 100, 100);*/
+
+
+
+    </script>
+</body>
+
+</html>
